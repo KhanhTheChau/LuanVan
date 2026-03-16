@@ -1,6 +1,8 @@
 import os
 from pymongo import MongoClient
 import threading
+from werkzeug.security import generate_password_hash
+from datetime import datetime
 
 class DatabaseCache:
     _instance = None
@@ -59,6 +61,35 @@ class DatabaseCache:
         # Job indexes
         self._db.unlearning_jobs.create_index("job_id", unique=True)
         self._db.unlearning_jobs.create_index("status")
+
+        # --- Unified Collection: users ---
+        if "users" not in self._db.list_collection_names():
+            self._db.create_collection("users")
+            
+        self._db.users.create_index("username", unique=True)
+        
+        # Ensure default admin exists
+        admin = self._db.users.find_one({"username": "admin"})
+        if not admin:
+            self._db.users.insert_one({
+                "username": "admin",
+                "password_hash": generate_password_hash("admin123"),
+                "role": "admin",
+                "created_at": datetime.utcnow()
+            })
+            print("Default admin account created in unified users collection.")
+            
+        # --- Unified Collection: sessions ---
+        if "sessions" not in self._db.list_collection_names():
+            self._db.create_collection("sessions")
+            
+        self._db.sessions.create_index("token", unique=True)
+        
+        # --- Collection: prediction_history ---
+        if "prediction_history" not in self._db.list_collection_names():
+            self._db.create_collection("prediction_history")
+            
+        self._db.prediction_history.create_index("user_id")
 
 
 # Global instance

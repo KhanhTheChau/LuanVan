@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 from bson import Binary
 from db import get_db
+from routes.auth import require_admin
 
 dataset_bp = Blueprint("dataset", __name__)
 
@@ -107,6 +108,7 @@ def list_dataset():
     })
 
 @dataset_bp.route("/analyze", methods=["POST"])
+@require_admin
 def analyze_dataset():
     data = request.get_json() or {}
     limit = data.get("limit", None)

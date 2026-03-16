@@ -1,53 +1,51 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaFacebook, FaYoutube, FaTiktok, FaGithub } from 'react-icons/fa';
 
 const Footer = () => {
   return (
-    <footer className="bg-slate-900 text-slate-300 py-12 mt-auto">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="bg-slate-800 text-slate-300 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
         
-        {/* Cột 1 */}
+        {/* About Project */}
         <div>
-          <h3 className="text-white text-lg font-bold mb-4">About Project</h3>
+          <h3 className="text-white text-lg font-bold mb-4">AI Plant Disease Detection System</h3>
           <p className="text-sm leading-relaxed text-slate-400">
-            AI Plant Disease Detection System<br />
-            Developed for Machine Unlearning Research.
+            Developed for Machine Unlearning Research.<br/>
+            Computer Science Thesis.
           </p>
         </div>
 
-        {/* Cột 2 */}
+        {/* Quick Links */}
         <div>
           <h3 className="text-white text-lg font-bold mb-4">Quick Links</h3>
-          <ul className="space-y-2 text-sm text-slate-400">
-            <li><a href="#" className="hover:text-white transition-colors">User Guide</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Dataset Info</a></li>
-            <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+          <ul className="space-y-2 text-sm">
+            <li><Link to="/guide" className="hover:text-white transition-colors">User Guide</Link></li>
+            <li><Link to="/pol" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+            <li><Link to="/admin/dashboard" className="hover:text-white transition-colors">Admin Dashboard</Link></li>
+            <li><Link to="/about" className="hover:text-white transition-colors">Contact</Link></li>
           </ul>
         </div>
 
-        {/* Cột 3 */}
+        {/* Social Media */}
         <div>
-          <h3 className="text-white text-lg font-bold mb-4">Social Media</h3>
+          <h3 className="text-white text-lg font-bold mb-4">Connect</h3>
           <div className="flex gap-4">
-            <a href="https://facebook.com/project" target="_blank" rel="noreferrer" className="bg-slate-800 p-2 rounded-full hover:bg-blue-600 hover:text-white transition-all transform hover:scale-110">
-              <FaFacebook size={20} />
+            <a href="https://facebook.com/project" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-500 transition-colors text-2xl">
+              <FaFacebook />
             </a>
-            <a href="https://youtube.com/project" target="_blank" rel="noreferrer" className="bg-slate-800 p-2 rounded-full hover:bg-red-600 hover:text-white transition-all transform hover:scale-110">
-              <FaYoutube size={20} />
+            <a href="https://youtube.com/project" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-red-500 transition-colors text-2xl">
+              <FaYoutube />
             </a>
-            <a href="https://tiktok.com/project" target="_blank" rel="noreferrer" className="bg-slate-800 p-2 rounded-full hover:bg-black hover:text-white transition-all transform hover:scale-110">
-              <FaTiktok size={20} />
+            <a href="https://tiktok.com/project" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors text-2xl">
+              <FaTiktok />
             </a>
-            <a href="https://github.com/project" target="_blank" rel="noreferrer" className="bg-slate-800 p-2 rounded-full hover:bg-slate-700 hover:text-white transition-all transform hover:scale-110">
-              <FaGithub size={20} />
+            <a href="https://github.com/project" target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors text-2xl">
+              <FaGithub />
             </a>
           </div>
         </div>
 
-      </div>
-      <div className="container mx-auto px-4 mt-8 pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-        &copy; {new Date().getFullYear()} Machine Unlearning Research. All rights reserved.
       </div>
     </footer>
   );

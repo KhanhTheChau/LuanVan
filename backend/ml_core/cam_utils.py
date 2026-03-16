@@ -95,30 +95,8 @@ def create_dashboard(
     if bbox and len(bbox) == 4:
         x_min, y_min, x_max, y_max = bbox
         cv2.rectangle(overlay, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255,   0), 2)
-        
-    # Draw Text Region (pad image to right for text)
-    pad_w = 300
-    dashboard = np.zeros((img_h, img_w + pad_w, 3), dtype=np.uint8)
-    dashboard[:, :img_w] = overlay
-    dashboard[:, img_w:] = (40, 44, 52) # Slate-800 background
-    
-    # Add text
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    color = (255, 255, 255)
-    
-    cv2.putText(dashboard, f"GT: {gt}", (img_w + 20, 50), font, 0.7, color, 1)
-    cv2.putText(dashboard, f"Pred: {pred}", (img_w + 20, 90), font, 0.7, (144, 238, 144), 2)
-    cv2.putText(dashboard, f"Score: {score:.2f}", (img_w + 20, 130), font, 0.7, color, 1)
-    
-    if v_list:
-        cv2.putText(dashboard, "Votes:", (img_w + 20, 180), font, 0.7, color, 1)
-        y_pos = 220
-        for k, v in v_list.items():
-            cv2.putText(dashboard, f"{k}: {float(v):.2f}", (img_w + 20, y_pos), font, 0.6, (200, 200, 200), 1)
-            y_pos += 30
-
     # Encode to base64
-    _, buffer = cv2.imencode('.jpg', dashboard)
+    _, buffer = cv2.imencode('.jpg', overlay)
     b64_str = base64.b64encode(buffer).decode('utf-8')
     prefix = "data:image/jpeg;base64,"
     

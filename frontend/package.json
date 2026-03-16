@@ -1,6 +1,7 @@
 {
   "name": "plant-disease-unlearning-frontend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Thesis Frontend Dashboard for AI Model Unlearning",
   "main": "src/index.js",
   "scripts": {

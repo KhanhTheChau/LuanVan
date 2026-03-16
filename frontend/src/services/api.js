@@ -1,33 +1,30 @@
 import axios from 'axios';
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
 });
 
-export const predictSingle = async (imageFile) => {
-    const formData = new FormData();
-    formData.append('image', imageFile);
-    const response = await api.post('/predict', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return response.data;
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const predictImage = async (imageFile) => {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+
+  const response = await api.post('/predict', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
 
-export const getDataset = async (limit = 50, skip = 0, isNoisy = null) => {
-    const params = { limit, skip };
-    if (isNoisy !== null) params.is_noisy = isNoisy;
-    const response = await api.get('/dataset', { params });
-    return response.data;
-};
-
-export const startUnlearning = async (config) => {
-    const response = await api.post('/unlearn/start', config);
-    return response.data;
-};
-
-export const getUnlearnStatus = async (jobId) => {
-    const response = await api.get(`/unlearn/status/${jobId}`);
-    return response.data;
-};
-
+// You can add other API calls here (dataset analysis, unlearning, etc.)
 export default api;

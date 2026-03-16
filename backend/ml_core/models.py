@@ -26,21 +26,22 @@ class ModelLoader:
     Quản lý load weights cho model
     """
     @staticmethod
-    def load_model(model: nn.Module, weight_path: str) -> nn.Module:
+    def load_model(model: nn.Module, weight_path: str, device=DEVICE) -> nn.Module:
         if not os.path.exists(weight_path):
             raise FileNotFoundError(f"Weight path not found: {weight_path}")
             
-        print(f"Loading weights from {weight_path} to {DEVICE}...")
-        state_dict = torch.load(weight_path, map_location=DEVICE)
+        print(f"Loading weights from {weight_path} to {device}...")
+        # Lỗi 3: Luôn force load map_location theo device hiện tại (hoặc cpu) nếu RAM yếu
+        state_dict = torch.load(weight_path, map_location=device)
         
-        # Determine if state_dict is raw state dict or nested (e.g. checkpoint dict)
         if 'model_state_dict' in state_dict:
             model.load_state_dict(state_dict['model_state_dict'])
         else:
-            # Handle potential DataParallel 'module.' prefix
             if list(state_dict.keys())[0].startswith('module.'):
                 state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
             model.load_state_dict(state_dict)
             
+        # Lỗi 4: Đảm bảo model.eval()
         model.eval()
+        model = model.to(device)
         return model

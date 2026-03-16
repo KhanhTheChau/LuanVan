@@ -1,17 +1,13 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import InferencePage from './pages/InferencePage';
-import DashboardPage from './pages/DashboardPage';
+import React from 'react'
+import AppRouter from './router/AppRouter'
+import { AppContextProvider } from './context/AppContext'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<InferencePage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-      </Routes>
-    </Router>
-  );
+    <AppContextProvider>
+      <AppRouter />
+    </AppContextProvider>
+  )
 }
 
-export default App;
+export default App

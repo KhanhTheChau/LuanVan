@@ -2,10 +2,12 @@ import uuid
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from db import get_db
+from routes.auth import require_admin
 
 unlearn_bp = Blueprint("unlearn", __name__)
 
 @unlearn_bp.route("/start", methods=["POST"])
+@require_admin
 def start_unlearning():
     data = request.get_json() or {}
     epochs = data.get("epochs", 3)

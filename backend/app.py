@@ -4,7 +4,8 @@ from celery import Celery
 import os
 
 def create_app():
-    app = Flask(__name__)
+    # Make /public available to serve images for prediction history
+    app = Flask(__name__, static_folder="public", static_url_path="/public")
     CORS(app)
 
     # Config Limits for Batch predictions (e.g., 500 MB)
@@ -18,10 +19,12 @@ def create_app():
     from routes.predict import predict_bp
     from routes.dataset import dataset_bp
     from routes.unlearn import unlearn_bp
+    from routes.auth import auth_bp
 
     app.register_blueprint(predict_bp, url_prefix="/api")
     app.register_blueprint(dataset_bp, url_prefix="/api/dataset")
     app.register_blueprint(unlearn_bp, url_prefix="/api/unlearn")
+    app.register_blueprint(auth_bp, url_prefix="/api")
 
     return app
 
