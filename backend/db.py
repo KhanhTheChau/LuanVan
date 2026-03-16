@@ -49,7 +49,7 @@ class DatabaseCache:
         # Images indexes
         self._db.images.create_index("filename")
         self._db.images.create_index("label")
-        self._db.images.create_index("split")
+        self._db.images.create_index("data_split")
         self._db.images.create_index("is_noisy")
         
         # --- Collection: unlearning_jobs ---

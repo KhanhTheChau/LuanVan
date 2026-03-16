@@ -9,7 +9,7 @@ dataset_bp = Blueprint("dataset", __name__)
 def add_dataset():
     files = request.files.getlist("images")
     label = request.form.get("label")
-    split = request.form.get("split", "train")
+    data_split = request.form.get("split", "train")
     
     if not files:
         return jsonify({"error": "No images provided"}), 400
@@ -33,13 +33,19 @@ def add_dataset():
             continue
             
         # Insert image block into MongoDB
+        now = datetime.utcnow()
         doc = {
             "filename": file.filename,
             "image_data": Binary(img_bytes),
             "label": label,
-            "split": split,
+            "predict_label": "",
+            "vote_scores": {},
+            "status": "pending",
+            "metadata": {},
+            "data_split": data_split,
             "is_noisy": False,
-            "upload_time": datetime.utcnow()
+            "created_at": now,
+            "updated_at": now
         }
         db.images.insert_one(doc)
         added_count += 1
@@ -50,7 +56,7 @@ def add_dataset():
         "message": "Successfully added images to dataset",
         "added_count": added_count,
         "target_label": label,
-        "split": split,
+        "split": data_split,
         "dataset_total": total_images
     })
 
@@ -80,13 +86,18 @@ def list_dataset():
             "id": str(doc["_id"]),
             "filename": doc["filename"],
             "label": doc["label"],
-            "split": doc.get("split", "train"),
+            "split": doc.get("data_split", "train"),
             "is_noisy": doc.get("is_noisy", False)
         }
         # If analyzed, it will have vote_scores
-        if "vote_scores" in doc:
-            img_data.update(doc["vote_scores"])
-            img_data["total_score"] = doc.get("total_score")
+        if "vote_scores" in doc and doc["vote_scores"]:
+            vs = doc["vote_scores"]
+            img_data["V1"] = vs.get("v1_cam")
+            img_data["V2"] = vs.get("v2_crop")
+            img_data["V3"] = vs.get("v3_loss")
+            img_data["V4"] = vs.get("v4_tta")
+            img_data["V5"] = vs.get("v5_ens")
+            img_data["total_score"] = vs.get("total_score", doc.get("total_score"))
             
         images.append(img_data)
         

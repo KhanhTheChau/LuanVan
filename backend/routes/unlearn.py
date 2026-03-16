@@ -18,13 +18,21 @@ def start_unlearning():
     db.unlearning_jobs.insert_one({
         "job_id": job_id,
         "status": "processing",
-        "epochs": epochs,
-        "lambda": lam,
-        "temperature": temperature,
-        "created_time": datetime.utcnow(),
-        "finished_time": None,
-        "model_path": None,
-        "metrics": []
+        "model_architecture": "ResNet50",
+        "hyperparameters": {
+            "epochs": epochs,
+            "lambda": lam,
+            "temperature": temperature,
+            "learning_rate": "1e-5 (Fixed)",
+            "batch_size": "32 (Fixed)",
+            "optimizer": "Adam (Fixed)"
+        },
+        "forget_image_ids": [],
+        "metrics": [],
+        "saved_weights_path": None,
+        "error_message": None,
+        "created_at": datetime.utcnow(),
+        "completed_at": None
     })
     
     # Trigger Celery Task
