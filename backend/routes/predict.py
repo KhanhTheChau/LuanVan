@@ -162,7 +162,8 @@ def predict_single():
             "predicted_class": predicted_class,
             "confidence": float(confidence.item()),
             "processing_time": float(time_taken),
-            "gradcam_base64": gradcam_base64
+            "gradcam_base64": gradcam_base64,
+            "image_path": f"/public/uploads/{random_filename}"
         })
 
     except Exception as e:

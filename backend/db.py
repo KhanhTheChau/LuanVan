@@ -91,6 +91,12 @@ class DatabaseCache:
             
         self._db.prediction_history.create_index("user_id")
 
+        # --- Collection: prediction_feedback ---
+        if "prediction_feedback" not in self._db.list_collection_names():
+            self._db.create_collection("prediction_feedback")
+            
+        self._db.prediction_feedback.create_index("status")
+
 
 # Global instance
 db_cache = DatabaseCache()

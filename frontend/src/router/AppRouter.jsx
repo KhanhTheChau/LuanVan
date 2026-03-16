@@ -19,6 +19,7 @@ import DashboardPage from '../pages/admin/DashboardPage';
 import DatasetPage from '../pages/admin/DatasetPage';
 import AnalyzePage from '../pages/admin/AnalyzePage';
 import UnlearnPage from '../pages/admin/UnlearnPage';
+import FeedbackPage from '../pages/admin/FeedbackPage';
 
 const AppRouter = () => {
   return (
@@ -45,6 +46,7 @@ const AppRouter = () => {
           <Route path="dataset" element={<DatasetPage />} />
           <Route path="analyze" element={<AnalyzePage />} />
           <Route path="unlearn" element={<UnlearnPage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
         </Route>
 
         {/* Catch-all */}

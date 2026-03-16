@@ -7,3 +7,4 @@ __pycache__/
 .env
 .env.example
 backend/model/
+package-lock.json

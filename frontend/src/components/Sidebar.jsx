@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Database, ActivitySquare, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Database, ActivitySquare, ShieldAlert, ArrowLeft, MessageSquare } from 'lucide-react';
 
 const Sidebar = () => {
   const linkClass = ({ isActive }) =>
@@ -33,6 +33,10 @@ const Sidebar = () => {
         <NavLink to="/admin/unlearn" className={linkClass}>
           <ShieldAlert size={20} />
           <span>Machine Unlearning</span>
+        </NavLink>
+        <NavLink to="/admin/feedback" className={linkClass}>
+          <MessageSquare size={20} />
+          <span>Feedback</span>
         </NavLink>
       </nav>
 

@@ -22,7 +22,9 @@ const PredictPage = () => {
     console.log(`Sending feedback: ${type}`);
     try {
       await api.post('/predict_feedback', {
+        image_path: predictionResult?.image_path,
         predicted_label: predictionResult?.predicted_class || 'unknown',
+        confidence: predictionResult?.confidence || 0,
         feedback_type: type
       });
     } catch (err) {
