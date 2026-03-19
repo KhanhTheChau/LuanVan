@@ -7,7 +7,7 @@ import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 import api from '../services/api';
 
 const PredictPage = () => {
-  const { predictionResult, resetPrediction } = useAppContext();
+  const { predictionResult, isPredicting, resetPrediction } = useAppContext();
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
   // Reset state when mounting the page so it's clean
@@ -42,19 +42,63 @@ const PredictPage = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Upload */}
-        <div className="lg:col-span-1 border-r border-slate-200 pr-0 lg:pr-8 border-r-0 lg:border-r">
-          <UploadBox />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="flex flex-col gap-6">
+          {/* Upload Block */}
+          <div className="rounded-2xl shadow-md p-4 bg-white h-fit">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Upload image</h3>
+            <UploadBox />
+          </div>
+
+          {/* Model Information Card */}
+          <div className="rounded-2xl shadow-md p-4 bg-white h-fit">
+            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
+              <Info className="text-blue-500" size={20} />
+              <h3 className="text-lg font-bold text-slate-800">Model Information</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-sm">
+              <div className="flex justify-between border-b border-slate-50 pb-1">
+                <span className="text-slate-500">Model Name:</span>
+                <span className="font-semibold text-slate-800 text-right">PlantDoc Disease Classifier</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-1">
+                <span className="text-slate-500">Architecture:</span>
+                <span className="font-semibold text-slate-800 text-right">ResNet50</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-1">
+                <span className="text-slate-500">Training Dataset:</span>
+                <span className="font-semibold text-slate-800 text-right">PlantDoc2</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-50 pb-1">
+                <span className="text-slate-500">Accuracy:</span>
+                <span className="font-semibold text-green-600 text-right">92%</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Right Column: Results */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <PredictionCard />
-          
-          {/* Prediction Feedback (Only show if there is a prediction) */}
+        {/* Right Column */}
+        <div className="flex flex-col gap-6">
+          {/* Visual Analysis Block (GradCAM + Results) */}
+          <div className="rounded-2xl shadow-md p-4 bg-white h-fit min-h-[400px]">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Visual Analysis (GradCAM)</h3>
+            {!predictionResult && !isPredicting ? (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                <Info size={48} className="mb-2 opacity-20" />
+                <p>Upload an image to see analysis results</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <PredictionCard />
+                <GradCAMViewer />
+              </div>
+            )}
+          </div>
+
+          {/* Prediction Feedback */}
           {predictionResult && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="rounded-2xl shadow-md p-4 bg-white h-fit">
               <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3">Prediction Feedback</h3>
               <p className="text-sm text-slate-500 mb-4">Đánh giá kết quả của AI để giúp cải thiện mô hình:</p>
               
@@ -77,39 +121,9 @@ const PredictPage = () => {
               )}
             </div>
           )}
-
-          {/* Model Information Card */}
-          <div className="bg-blue-50/50 rounded-xl border border-blue-100 p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Info className="text-blue-500" size={20} />
-              <h3 className="text-lg font-bold text-slate-800">Model Information</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 text-sm">
-              <div className="flex justify-between border-b border-blue-100/50 pb-1">
-                <span className="text-slate-500">Model Name:</span>
-                <span className="font-semibold text-slate-800">PlantDoc Disease Classifier</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-100/50 pb-1">
-                <span className="text-slate-500">Architecture:</span>
-                <span className="font-semibold text-slate-800">ResNet50</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-100/50 pb-1">
-                <span className="text-slate-500">Training Dataset:</span>
-                <span className="font-semibold text-slate-800">PlantDoc2</span>
-              </div>
-              <div className="flex justify-between border-b border-blue-100/50 pb-1">
-                <span className="text-slate-500">Accuracy:</span>
-                <span className="font-semibold text-green-600">92%</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
-      
-      {/* Full Width Visuals */}
-      <div className="mt-8">
-        <GradCAMViewer />
-      </div>
+
     </div>
   );
 };
