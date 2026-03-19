@@ -1,12 +1,14 @@
-from flask import Blueprint, request, jsonify
+import os
+import io
+from flask import Blueprint, request, jsonify, send_file
 from datetime import datetime
-from bson import Binary
+from bson import Binary, ObjectId
 from db import get_db
 from routes.auth import require_admin
 
 dataset_bp = Blueprint("dataset", __name__)
 
-@dataset_bp.route("/add", methods=["POST"])
+@dataset_bp.route("/dataset/add", methods=["POST"])
 def add_dataset():
     files = request.files.getlist("images")
     label = request.form.get("label")
@@ -61,10 +63,10 @@ def add_dataset():
         "dataset_total": total_images
     })
 
-@dataset_bp.route("", methods=["GET"])
+@dataset_bp.route("/images", methods=["GET"])
 def list_dataset():
     try:
-        limit = int(request.args.get("limit", 50))
+        limit = int(request.args.get("limit", 20))
         skip = int(request.args.get("skip", 0))
     except ValueError:
         return jsonify({"error": "Invalid pagination params"}), 400
@@ -79,7 +81,7 @@ def list_dataset():
     total = db.images.count_documents(query)
     
     # Exclude image_data to save bandwidth!
-    cursor = db.images.find(query, {"image_data": 0}).skip(skip).limit(limit)
+    cursor = db.images.find(query, {"image_data": 0}).skip(skip).limit(limit).sort("created_at", -1)
     
     images = []
     for doc in cursor:
@@ -107,13 +109,85 @@ def list_dataset():
         "images": images
     })
 
-@dataset_bp.route("/analyze", methods=["POST"])
+@dataset_bp.route("/dataset/stats", methods=["GET"])
+def get_dataset_stats():
+    db = get_db()
+    
+    # 1. Total images
+    total_images = db.images.count_documents({})
+    
+    # 2. Noisy count
+    noisy_count = db.images.count_documents({"is_noisy": True})
+    
+    # 3. Label distribution
+    label_pipeline = [
+        {"$group": {"_id": "$label", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    label_counts = {item["_id"]: item["count"] for item in db.images.aggregate(label_pipeline)}
+    
+    # 4. Split distribution
+    split_pipeline = [
+        {"$group": {"_id": "$data_split", "count": {"$sum": 1}}}
+    ]
+    split_counts = {item["_id"]: item["count"] for item in db.images.aggregate(split_pipeline)}
+    
+    return jsonify({
+        "total_images": total_images,
+        "noisy_count": noisy_count,
+        "label_counts": label_counts,
+        "split_counts": split_counts
+    })
+
+@dataset_bp.route("/dataset/image/<image_id>", methods=["GET"])
+def get_image_binary(image_id):
+    db = get_db()
+    try:
+        doc = db.images.find_one({"_id": ObjectId(image_id)})
+    except Exception:
+        return jsonify({"error": "Invalid image ID"}), 400
+        
+    if not doc:
+        return jsonify({"error": "Image not found"}), 404
+        
+    # Case 1: Image data is in DB as binary
+    if "image_data" in doc:
+        return send_file(
+            io.BytesIO(doc["image_data"]),
+            mimetype='image/jpeg',
+            download_name=doc.get("filename", "image.jpg")
+        )
+    
+    # Case 2: Image is on local disk
+    if "file_path" in doc:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        file_path = os.path.join(project_root, doc["file_path"])
+        
+        if os.path.exists(file_path):
+            return send_file(file_path)
+            
+    return jsonify({"error": "Image content not found on server"}), 404
+
+@dataset_bp.route("/system/stats", methods=["GET"])
+def get_system_stats():
+    db = get_db()
+    
+    total_users = db.users.count_documents({})
+    total_feedback = db.prediction_feedback.count_documents({})
+    total_predictions = db.prediction_history.count_documents({})
+    
+    return jsonify({
+        "total_users": total_users,
+        "total_feedback": total_feedback,
+        "total_predictions": total_predictions
+    })
+
+@dataset_bp.route("/dataset/analyze", methods=["POST"])
 @require_admin
 def analyze_dataset():
     data = request.get_json() or {}
     limit = data.get("limit", None)
     
-    # We trigger the Celery background task
     from tasks import analyze_dataset_task
     task = analyze_dataset_task.delay(limit)
     
@@ -121,3 +195,5 @@ def analyze_dataset():
         "message": "Analyze task started in background",
         "task_id": task.id
     })
+
+

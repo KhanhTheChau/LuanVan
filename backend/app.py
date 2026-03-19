@@ -23,7 +23,7 @@ def create_app():
     from routes.feedback import feedback_bp
 
     app.register_blueprint(predict_bp, url_prefix="/api")
-    app.register_blueprint(dataset_bp, url_prefix="/api/dataset")
+    app.register_blueprint(dataset_bp, url_prefix="/api")
     app.register_blueprint(unlearn_bp, url_prefix="/api/unlearn")
     app.register_blueprint(auth_bp, url_prefix="/api")
     app.register_blueprint(feedback_bp, url_prefix="/api")
