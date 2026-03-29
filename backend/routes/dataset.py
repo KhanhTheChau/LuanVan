@@ -1,5 +1,6 @@
 import os
 import io
+import re
 from flask import Blueprint, request, jsonify, send_file
 from datetime import datetime
 from bson import Binary, ObjectId
@@ -72,16 +73,37 @@ def list_dataset():
         return jsonify({"error": "Invalid pagination params"}), 400
 
     is_noisy_param = request.args.get("is_noisy")
+    search = request.args.get("search", "").strip()
+    sort_by = request.args.get("sort_by", "created_at")
+    order = request.args.get("order", "desc")
     
     query = {}
     if is_noisy_param is not None:
         query["is_noisy"] = is_noisy_param.lower() == "true"
         
+    if search:
+        search_regex = re.compile(search, re.IGNORECASE)
+        query["$or"] = [
+            {"filename": search_regex},
+            {"label": search_regex}
+        ]
+        
     db = get_db()
     total = db.images.count_documents(query)
     
+    sort_mapping = {
+        "filename": "filename",
+        "label": "label",
+        "split": "data_split",
+        "created_at": "created_at",
+        "status": "status",
+        "noisy": "is_noisy"
+    }
+    db_sort_field = sort_mapping.get(sort_by, "created_at")
+    db_sort_order = -1 if order.lower() == "desc" else 1
+    
     # Exclude image_data to save bandwidth!
-    cursor = db.images.find(query, {"image_data": 0}).skip(skip).limit(limit).sort("created_at", -1)
+    cursor = db.images.find(query, {"image_data": 0}).skip(skip).limit(limit).sort([(db_sort_field, db_sort_order)])
     
     images = []
     for doc in cursor:
@@ -160,7 +182,9 @@ def get_image_binary(image_id):
     
     # Case 2: Image is on local disk
     if "file_path" in doc:
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # __file__ is backend/routes/dataset.py
+        # Need to go up to backend/ folder, then up to the main root where plantdoc2 exists.
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         file_path = os.path.join(project_root, doc["file_path"])
         
         if os.path.exists(file_path):
@@ -196,4 +220,118 @@ def analyze_dataset():
         "task_id": task.id
     })
 
+@dataset_bp.route("/dataset/analyze/single", methods=["POST"])
+@require_admin
+def analyze_single():
+    data = request.get_json() or {}
+    image_id = data.get("image_id")
+    if not image_id:
+        return jsonify({"error": "image_id is required"}), 400
+        
+    db = get_db()
+    try:
+        doc = db.images.find_one({"_id": ObjectId(image_id)})
+        if not doc:
+            return jsonify({"error": "Image not found"}), 404
+            
+        from tasks import detect_noise_internal
+        update_data = detect_noise_internal(doc)
+        
+        if "error" in update_data:
+            return jsonify(update_data), 500
+            
+        # Spec Change: DO NOT update DB here. Return data for review.
+        return jsonify({
+            "message": "Analysis computed (Draft)",
+            "image_id": image_id,
+            "is_noisy": update_data["is_noisy"],
+            "vote_scores": update_data["vote_scores"]
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
+@dataset_bp.route("/dataset/analyze/save", methods=["POST"])
+@require_admin
+def analyze_save():
+    data = request.get_json() or {}
+    image_id = data.get("image_id")
+    vote_scores = data.get("vote_scores")
+    is_noisy = data.get("is_noisy")
+    
+    if not image_id or vote_scores is None:
+        return jsonify({"error": "image_id and vote_scores are required"}), 400
+        
+    db = get_db()
+    try:
+        now = datetime.utcnow()
+        update_data = {
+            "vote_scores": vote_scores,
+            "total_score": vote_scores.get("total_score", 0),
+            "is_noisy": is_noisy,
+            "analyzed_time": now,
+            "updated_at": now
+        }
+        
+        result = db.images.update_one({"_id": ObjectId(image_id)}, {"$set": update_data})
+        if result.matched_count == 0:
+            return jsonify({"error": "Image not found"}), 404
+            
+        return jsonify({"message": "Analysis results saved successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@dataset_bp.route("/dataset/<id>/info", methods=["GET"])
+@require_admin
+def get_dataset_info(id):
+    db = get_db()
+    try:
+        doc = db.images.find_one({"_id": ObjectId(id)}, {"image_data": 0})
+    except:
+        return jsonify({"error": "Invalid ID"}), 400
+        
+    if not doc:
+        return jsonify({"error": "Dataset not found"}), 404
+        
+    doc["_id"] = str(doc["_id"])
+    return jsonify(doc)
+
+@dataset_bp.route("/dataset/<id>", methods=["PUT"])
+@require_admin
+def update_dataset(id):
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    updates = {}
+    if "label" in data:
+        updates["label"] = data["label"]
+    if "data_split" in data:
+        updates["data_split"] = data["data_split"]
+    if "is_noisy" in data:
+        updates["is_noisy"] = data["is_noisy"]
+        
+    if not updates:
+        return jsonify({"error": "Nothing to update"}), 400
+        
+    updates["updated_at"] = datetime.utcnow()
+    
+    db = get_db()
+    try:
+        result = db.images.update_one({"_id": ObjectId(id)}, {"$set": updates})
+        if result.matched_count == 0:
+            return jsonify({"error": "Dataset not found"}), 404
+        return jsonify({"message": "Successfully updated dataset"})
+    except:
+        return jsonify({"error": "Invalid ID"}), 400
+
+@dataset_bp.route("/dataset/<id>", methods=["DELETE"])
+@require_admin
+def delete_dataset(id):
+    db = get_db()
+    try:
+        result = db.images.delete_one({"_id": ObjectId(id)})
+        if result.deleted_count == 0:
+            return jsonify({"error": "Dataset not found"}), 404
+        return jsonify({"message": "Successfully deleted dataset record"})
+    except:
+        return jsonify({"error": "Invalid ID"}), 400

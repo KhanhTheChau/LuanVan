@@ -32,13 +32,16 @@ def require_admin(f):
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+            return jsonify({'success': False, 'message': 'Unauthorized - Missing token'}), 401
         
         token = auth_header.split(' ')[1]
         db = get_db()
         session = db.sessions.find_one({'token': token})
         
-        if not session or session.get('role') != 'admin':
+        if not session:
+            return jsonify({'success': False, 'message': 'Unauthorized - Invalid or expired session'}), 401
+            
+        if session.get('role') != 'admin':
             return jsonify({'success': False, 'message': 'Forbidden - Admin access required'}), 403
             
         request.user_id = session.get('user_id')

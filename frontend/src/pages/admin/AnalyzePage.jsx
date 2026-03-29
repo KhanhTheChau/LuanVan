@@ -1,57 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
-import { ActivitySquare } from 'lucide-react';
+import AnalyzeControls from '../../components/AnalyzeControls';
+import AnalyzeResults from '../../components/AnalyzeResults';
+import { Activity } from 'lucide-react';
 
 const AnalyzePage = () => {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [mode, setMode] = useState('single');
+  const [singleResult, setSingleResult] = useState(null);
+  const [batchResults, setBatchResults] = useState([]);
+  const [error, setError] = useState(null);
 
-  const handleAnalyze = async () => {
-    setLoading(true);
-    setResult(null);
+  // Fetch already analyzed images for the batch table
+  const fetchBatchResults = useCallback(async () => {
     try {
-      const response = await api.post('/dataset/analyze', { limit: 100 }); // Test limit
-      setResult(response.data);
+      // In a real app, we might want a specific 'analyzed=true' flag
+      // For now, we fetch a large list and the component filters or we can use the existing backend
+      const response = await api.get('/images?limit=100&sort_by=created_at&order=desc');
+      // Filter images that have analysis data
+      const analyzed = response.data.images.filter(img => img.V1 !== undefined);
+      setBatchResults(analyzed);
     } catch (err) {
-      alert("Failed to run analysis");
-      console.error(err);
+      console.error("Failed to fetch results", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchBatchResults();
+  }, [fetchBatchResults]);
+
+  const handleAnalyze = async ({ mode: selectedMode, imageId, limit }) => {
+    setLoading(true);
+    setError(null);
+    setMode(selectedMode);
+    
+    try {
+      console.log(`Starting ${selectedMode} analysis...`);
+      if (selectedMode === 'single') {
+        const response = await api.post('/dataset/analyze/single', { image_id: imageId });
+        console.log("Analysis Result:", response.data);
+        
+        const res = response.data;
+        if (res && res.image_id) {
+          setSingleResult({
+            id: res.image_id,
+            is_noisy: res.is_noisy || false,
+            vote_scores: res.vote_scores || {},
+            filename: res.filename || "In-Memory Analysis"
+          });
+        } else {
+          throw new Error("Invalid response format from server");
+        }
+      } else {
+        await api.post('/dataset/analyze', { limit: limit || 100 });
+        alert("Batch analysis started in background. Results will appear as they are processed.");
+        setTimeout(fetchBatchResults, 3000);
+      }
+    } catch (err) {
+      console.error("Analysis Error:", err);
+      setError(err.response?.data?.error || err.message || "Analysis failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">Dataset Analysis</h1>
-      
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
-        <div className="flex flex-col items-center text-center">
-          <ActivitySquare size={48} className="text-blue-500 mb-4" />
-          <h2 className="text-xl font-bold mb-2">Supreme Oracle Pipeline</h2>
-          <p className="text-slate-500 mb-8 max-w-lg">
-            Run the Supreme Oracle Pipeline to scan the dataset and identify noisy labels.
-            This assigns vote scores to images based on prediction heuristics.
-          </p>
-          
-          <button 
-            onClick={handleAnalyze} 
-            disabled={loading}
-            className={`px-6 py-3 rounded-lg font-medium text-white transition-opacity ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            {loading ? "Analyzing Dataset..." : "Start Analysis (Limit 100)"}
-          </button>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight">Supreme Oracle Pipeline</h1>
+          <p className="text-slate-400 font-medium mt-1">Noise Detection & Heuristic Data Analysis</p>
         </div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-sm border border-blue-100">
+          <Activity size={24} />
+        </div>
+      </div>
 
-        {result && (
-          <div className="mt-8 p-4 bg-slate-50 border border-slate-200 rounded-lg">
-            <h3 className="font-bold text-slate-700 mb-2">Analysis Complete</h3>
-            <p className="text-sm text-slate-600">Analyzed: {result.analyzed_count} images</p>
-            <p className="text-sm text-red-600 font-medium mt-1">Found {result.noisy_images?.length || 0} noisy records</p>
-            <div className="mt-4 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded p-2 text-xs">
-              <pre>{JSON.stringify(result.noisy_images, null, 2)}</pre>
-            </div>
-          </div>
-        )}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium flex items-center gap-2">
+          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          {error}
+        </div>
+      )}
+
+      {/* Part 1: Controls */}
+      <AnalyzeControls onAnalyze={handleAnalyze} loading={loading} />
+
+      {/* Part 2: Results */}
+      <div className="mt-12">
+        <AnalyzeResults 
+          mode={mode} 
+          singleResult={singleResult} 
+          batchResults={batchResults} 
+        />
       </div>
     </div>
   );
