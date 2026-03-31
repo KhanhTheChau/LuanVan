@@ -35,10 +35,11 @@ const AnalyzePage = () => {
     setMode(selectedMode);
     
     try {
-      console.log(`Starting ${selectedMode} analysis...`);
+      console.log(`[FRONTEND] Starting ${selectedMode} analysis...`);
       if (selectedMode === 'single') {
         const response = await api.post('/dataset/analyze/single', { image_id: imageId });
-        console.log("Analysis Result:", response.data);
+        console.log("Analyze data:", response.data);
+        console.log("[FRONTEND] Single Analysis Result Received:", response.data);
         
         const res = response.data;
         if (res && res.image_id) {
@@ -52,12 +53,22 @@ const AnalyzePage = () => {
           throw new Error("Invalid response format from server");
         }
       } else {
-        await api.post('/dataset/analyze', { limit: limit || 100 });
+        const response = await api.post('/dataset/analyze', { limit: limit || 100 });
+        console.log("Analyze data:", response.data);
+        console.log("[FRONTEND] Batch analysis task started:", response.data);
         alert("Batch analysis started in background. Results will appear as they are processed.");
-        setTimeout(fetchBatchResults, 3000);
+        
+        // Polling for updates every 3 seconds for 5 times
+        let count = 0;
+        const interval = setInterval(() => {
+          console.log("[FRONTEND] Polling for batch results update...");
+          fetchBatchResults();
+          count++;
+          if (count >= 5) clearInterval(interval);
+        }, 3000);
       }
     } catch (err) {
-      console.error("Analysis Error:", err);
+      console.error("[FRONTEND] Analysis Error:", err);
       setError(err.response?.data?.error || err.message || "Analysis failed");
     } finally {
       setLoading(false);

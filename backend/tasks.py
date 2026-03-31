@@ -401,6 +401,7 @@ def analyze_dataset_task(self, limit=None):
     db = get_db()
     
     query = {}
+    # Only analyze images that haven't been analyzed or we want to re-analyze
     cursor = db.images.find(query)
     if limit is not None:
         cursor = cursor.limit(int(limit))
@@ -409,15 +410,36 @@ def analyze_dataset_task(self, limit=None):
     noisy_count = 0
     now = datetime.utcnow()
     
+    print(f"[TASK] Starting batch analysis for {limit or 'all'} images...")
+    
     for doc in cursor:
         doc_id = doc["_id"]
-        # detect_noise_internal returns result but we DO NOT update DB here
+        # detect_noise_internal returns results
         res = detect_noise_internal(doc, now)
+        
+        if "error" in res:
+            print(f"[TASK] Error analyzing image {doc_id}: {res['error']}")
+            continue
+            
+        # Update DB with results
+        update_data = {
+            "vote_scores": res["vote_scores"],
+            "total_score": res["total_score"],
+            "is_noisy": res["is_noisy"],
+            "analyzed_time": now,
+            "updated_at": now
+        }
+        
+        db.images.update_one({"_id": doc_id}, {"$set": update_data})
         
         analyzed_count += 1
         if res.get("is_noisy"):
             noisy_count += 1
             
+        if analyzed_count % 10 == 0:
+            print(f"[TASK] Progress: {analyzed_count} images analyzed...")
+            
+    print(f"[TASK] Batch analysis completed. Analyzed: {analyzed_count}, Noisy: {noisy_count}")
     return {
         "status": "completed",
         "analyzed_count": analyzed_count,

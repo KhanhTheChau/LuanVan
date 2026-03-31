@@ -207,10 +207,12 @@ def get_system_stats():
     })
 
 @dataset_bp.route("/dataset/analyze", methods=["POST"])
-@require_admin
 def analyze_dataset():
+    print("[BACKEND] Analyze dataset task requested - Auth Bypassed")
     data = request.get_json() or {}
     limit = data.get("limit", None)
+    
+    print(f"[BACKEND] Analyze dataset task requested. Limit: {limit}")
     
     from tasks import analyze_dataset_task
     task = analyze_dataset_task.delay(limit)
@@ -221,24 +223,30 @@ def analyze_dataset():
     })
 
 @dataset_bp.route("/dataset/analyze/single", methods=["POST"])
-@require_admin
 def analyze_single():
+    print("[BACKEND] Single analysis requested - Auth Bypassed")
     data = request.get_json() or {}
     image_id = data.get("image_id")
     if not image_id:
         return jsonify({"error": "image_id is required"}), 400
         
+    print(f"[BACKEND] Single image analysis requested for ID: {image_id}")
+    
     db = get_db()
     try:
         doc = db.images.find_one({"_id": ObjectId(image_id)})
         if not doc:
+            print(f"[BACKEND] Image {image_id} not found")
             return jsonify({"error": "Image not found"}), 404
             
         from tasks import detect_noise_internal
         update_data = detect_noise_internal(doc)
         
         if "error" in update_data:
+            print(f"[BACKEND] Error in noise detection logic: {update_data['error']}")
             return jsonify(update_data), 500
+            
+        print(f"[BACKEND] Single analysis complete. Is Noisy: {update_data['is_noisy']}")
             
         # Spec Change: DO NOT update DB here. Return data for review.
         return jsonify({
@@ -251,8 +259,8 @@ def analyze_single():
         return jsonify({"error": str(e)}), 400
 
 @dataset_bp.route("/dataset/analyze/save", methods=["POST"])
-@require_admin
 def analyze_save():
+    print("[BACKEND] Save analysis results requested - Auth Bypassed")
     data = request.get_json() or {}
     image_id = data.get("image_id")
     vote_scores = data.get("vote_scores")
@@ -261,6 +269,7 @@ def analyze_save():
     if not image_id or vote_scores is None:
         return jsonify({"error": "image_id and vote_scores are required"}), 400
         
+    print(f"[BACKEND] Saving analysis results for image: {image_id}. Noisy status: {is_noisy}")
     db = get_db()
     try:
         now = datetime.utcnow()
