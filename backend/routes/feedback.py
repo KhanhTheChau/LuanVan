@@ -8,9 +8,39 @@ feedback_bp = Blueprint("feedback", __name__)
 
 @feedback_bp.route("/predict_feedback", methods=["POST"])
 def submit_feedback():
-    data = request.json
+    import os
+    import uuid
+    from datetime import datetime
+    
+    # Log received files and form data
+    print(f"[BACKEND] Feedback Request Files: {request.files}")
+    print(f"[BACKEND] Feedback Request Data: {request.form}")
+    
+    # Get metadata from form (multipart)
+    predicted_label = request.form.get("predicted_label", "unknown")
+    confidence = request.form.get("confidence", 0)
+    feedback_type = request.form.get("feedback_type", "unknown")
+    
     db = get_db()
     
+    # Image Saving Logic
+    image_path = None
+    if 'image' in request.files:
+        file = request.files['image']
+        if file.filename != '':
+            # Ensure upload directory exists
+            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public", "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Generate unique filename
+            filename = f"feedback_{uuid.uuid4().hex}.jpg"
+            save_path = os.path.join(upload_dir, filename)
+            file.save(save_path)
+            
+            # Formatted path for DB/Frontend
+            image_path = f"/public/uploads/{filename}"
+            print(f"[BACKEND] Feedback image saved to: {image_path}")
+
     # Try to extract user_id if logged in
     user_id = None
     auth_header = request.headers.get("Authorization")
@@ -22,15 +52,15 @@ def submit_feedback():
             
     db.prediction_feedback.insert_one({
         "user_id": user_id,
-        "image_path": data.get("image_path"),
-        "predicted_label": data.get("predicted_label"),
-        "confidence": data.get("confidence"),
-        "feedback_type": data.get("feedback_type"),
+        "image_path": image_path,
+        "predicted_label": predicted_label,
+        "confidence": float(confidence) if confidence else 0.0,
+        "feedback_type": feedback_type,
         "status": "pending",
         "created_at": datetime.utcnow()
     })
     
-    return jsonify({"success": True})
+    return jsonify({"success": True, "image_path": image_path})
 
 @feedback_bp.route("/admin/feedback", methods=["GET"])
 @require_admin
@@ -42,6 +72,17 @@ def get_feedback():
         doc["_id"] = str(doc["_id"])
         if doc.get("created_at"):
             doc["created_at"] = doc["created_at"].isoformat()
+            
+        # Normalize Path: ALWAYS use /public/uploads/ + filename for consistency
+        raw_p = doc.get("image_path", "")
+        if raw_p:
+            import os
+            # Extract just the filename (ignores slashes, backslashes, absolute paths)
+            filename = os.path.basename(raw_p.replace("\\", "/"))
+            doc["image_path"] = f"/public/uploads/{filename}"
+        else:
+            doc["image_path"] = None
+            
         feedbacks.append(doc)
         
     return jsonify({"success": True, "feedbacks": feedbacks})

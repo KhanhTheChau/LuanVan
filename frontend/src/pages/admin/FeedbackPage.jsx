@@ -97,11 +97,21 @@ const FeedbackPage = () => {
                   <tr key={item._id} className="hover:bg-slate-50 transition">
                     <td className="px-6 py-4">
                       {item.image_path ? (
-                        <img 
-                          src={`${backendHost}${item.image_path}`} 
-                          alt="Feedback" 
-                          className="w-16 h-16 object-cover rounded-md border border-slate-200"
-                        />
+                        (() => {
+                          const fullUrl = `${backendHost}${item.image_path}`;
+                          console.log("Feedback Image URL:", fullUrl);
+                          return (
+                            <img 
+                              src={fullUrl} 
+                              alt="Feedback" 
+                              className="w-16 h-16 object-cover rounded-md border border-slate-200"
+                              onError={(e) => {
+                                e.target.onerror = null; 
+                                e.target.src="https://via.placeholder.com/150?text=No+Image";
+                              }}
+                            />
+                          );
+                        })()
                       ) : (
                         <div className="w-16 h-16 bg-slate-100 rounded-md flex items-center justify-center text-xs text-slate-400 border border-slate-200">No Image</div>
                       )}

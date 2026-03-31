@@ -5,8 +5,15 @@ import os
 
 def create_app():
     # Make /public available to serve images for prediction history
-    app = Flask(__name__, static_folder="public", static_url_path="/public")
+    public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "public"))
+    app = Flask(__name__, static_folder=public_dir, static_url_path="/public")
     CORS(app)
+    
+    # Debug Route for testing static serving
+    from flask import send_from_directory
+    @app.route('/static-test/<filename>')
+    def test_static(filename):
+        return send_from_directory(os.path.join(public_dir, "uploads"), filename)
 
     # Config Limits for Batch predictions (e.g., 500 MB)
     app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024

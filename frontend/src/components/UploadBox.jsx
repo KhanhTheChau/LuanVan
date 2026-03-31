@@ -10,6 +10,7 @@ const UploadBox = () => {
   
   const { 
     setImagePreview, 
+    setImageFile,
     setPredictionResult, 
     setGradcamImage, 
     setIsPredicting 
@@ -27,8 +28,9 @@ const UploadBox = () => {
     
     setErrorMsg(null);
     
-    // Generate preview URL
+    // Store original file and generate preview URL
     const previewUrl = URL.createObjectURL(file);
+    setImageFile(file);
     setImagePreview(previewUrl);
     
     // Reset old state

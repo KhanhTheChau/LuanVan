@@ -7,7 +7,7 @@ import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 import api from '../services/api';
 
 const PredictPage = () => {
-  const { predictionResult, isPredicting, resetPrediction } = useAppContext();
+  const { predictionResult, isPredicting, resetPrediction, imageFile } = useAppContext();
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
   // Reset state when mounting the page so it's clean
@@ -21,14 +21,21 @@ const PredictPage = () => {
     setFeedbackMsg('Cảm ơn bạn đã phản hồi');
     console.log(`Sending feedback: ${type}`);
     try {
-      await api.post('/predict_feedback', {
-        image_path: predictionResult?.image_path,
-        predicted_label: predictionResult?.predicted_class || 'unknown',
-        confidence: predictionResult?.confidence || 0,
-        feedback_type: type
+      const formData = new FormData();
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      formData.append('predicted_label', predictionResult?.predicted_class || 'unknown');
+      formData.append('confidence', predictionResult?.confidence || 0);
+      formData.append('feedback_type', type);
+
+      await api.post('/predict_feedback', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
     } catch (err) {
-      console.warn("Feedback API not available yet. Logged to console.");
+      console.warn("Feedback API error:", err);
     }
     setTimeout(() => setFeedbackMsg(''), 5000);
   };

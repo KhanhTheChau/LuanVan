@@ -5,6 +5,7 @@ const AppContext = createContext();
 export const AppContextProvider = ({ children }) => {
   // Global state for Prediction Pipeline
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // Raw File object
   const [predictionResult, setPredictionResult] = useState(null); // { predicted_class: string, confidence: number, processing_time: number }
   const [gradcamImage, setGradcamImage] = useState(null); // Base64 string
   const [isPredicting, setIsPredicting] = useState(false);
@@ -14,6 +15,8 @@ export const AppContextProvider = ({ children }) => {
   const value = {
     imagePreview,
     setImagePreview,
+    imageFile,
+    setImageFile,
     predictionResult,
     setPredictionResult,
     gradcamImage,
@@ -24,6 +27,7 @@ export const AppContextProvider = ({ children }) => {
     // Helper to reset prediction state
     resetPrediction: () => {
       setImagePreview(null);
+      setImageFile(null);
       setPredictionResult(null);
       setGradcamImage(null);
     }
