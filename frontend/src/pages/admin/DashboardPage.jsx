@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
-import { Layers, Image as ImageIcon, ShieldAlert, Cpu, Loader2, AlertCircle, TrendingUp, Target, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { Layers, Image as ImageIcon, ShieldAlert, Cpu, Loader2, AlertCircle, TrendingUp, Target, BarChart3, PieChart as PieChartIcon, Database, LayoutDashboard } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell 
@@ -116,9 +116,9 @@ const DashboardPage = () => {
       <div className="flex justify-between items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-50">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-             <Target className="text-blue-600" size={28} /> Advanced Dataset Analytics
+             <LayoutDashboard className="text-blue-600" size={28} /> System Dashboard
           </h1>
-          <p className="text-slate-500 font-medium mt-1">Selective Forgetting & Heuristic Quality Monitoring</p>
+          <p className="text-slate-500 font-medium mt-1">Dataset Analytics & Model Quality Monitoring</p>
         </div>
         <div className="text-right hidden md:block">
           <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Last Engine Sync</div>
@@ -129,12 +129,13 @@ const DashboardPage = () => {
       </div>
       
       {/* Row 1: Key Metadata */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
         <StatCard title="Total Volume" value={cleanTotalImages.toLocaleString()} icon={<ImageIcon size={22} />} color="blue" subtitle="Clean Dataset" />
         <StatCard title="Target Classes" value={totalClasses} icon={<Target size={22} />} color="indigo" subtitle="Disease Nodes" />
         <StatCard title="Train Size" value={stats?.split_counts.train || 0} icon={<Layers size={22} />} color="emerald" subtitle="70-80%" />
-        <StatCard title="Val/Test" value={(stats?.split_counts.val || 0) + (stats?.split_counts.test || 0)} icon={<Cpu size={22} />} color="purple" subtitle="Evaluation" />
-        <StatCard title="Noisy Nodes" value={stats?.noisy_count || 0} icon={<ShieldAlert size={22} />} color="rose" subtitle="Filtered" />
+        <StatCard title="Val Size" value={stats?.split_counts.val || 0} icon={<Database size={22} />} color="purple" subtitle="Dev Set" />
+        <StatCard title="Test Size" value={stats?.split_counts.test || 0} icon={<Cpu size={22} />} color="fuchsia" subtitle="Eval Set" />
+        <StatCard title="Noisy Nodes" value={stats?.noisy_count || 0} icon={<AlertCircle size={22} />} color="rose" subtitle="Filtered" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

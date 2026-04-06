@@ -71,7 +71,7 @@ const PredictPage = () => {
               </div>
               <div className="flex justify-between border-b border-slate-50 pb-1">
                 <span className="text-slate-500">Architecture:</span>
-                <span className="font-semibold text-slate-800 text-right">ResNet50</span>
+                <span className="font-semibold text-slate-800 text-right">Knowledge distillation</span>
               </div>
               <div className="flex justify-between border-b border-slate-50 pb-1">
                 <span className="text-slate-500">Training Dataset:</span>
@@ -79,7 +79,7 @@ const PredictPage = () => {
               </div>
               <div className="flex justify-between border-b border-slate-50 pb-1">
                 <span className="text-slate-500">Accuracy:</span>
-                <span className="font-semibold text-green-600 text-right">92%</span>
+                <span className="font-semibold text-green-600 text-right">70%</span>
               </div>
             </div>
           </div>

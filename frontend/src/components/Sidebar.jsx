@@ -4,9 +4,9 @@ import { LayoutDashboard, Database, ActivitySquare, ShieldAlert, ArrowLeft, Mess
 
 const Sidebar = () => {
   const linkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
       isActive 
-        ? 'bg-green-50 text-green-700' 
+        ? 'bg-slate-800 text-white shadow-md' 
         : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
     }`;
 

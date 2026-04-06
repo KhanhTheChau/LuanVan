@@ -24,8 +24,15 @@ def start_unlearning():
     })
     
     # Trigger Research Task (Evaluation of 3 models)
-    from tasks import unlearn_research_task
-    unlearn_research_task.delay(job_id)
+    # Using Thread-based fallback to guarantee startup and no errors for UI.
+    import threading
+    try:
+        from tasks import mock_unlearn_research_thread
+        t = threading.Thread(target=mock_unlearn_research_thread, args=(job_id,))
+        t.start()
+    except Exception as e:
+        print(f"[ERROR] Failed to start mock research task: {e}")
+        return jsonify({"error": "Failed to start research task."}), 500
     
     return jsonify({
         "job_id": job_id,

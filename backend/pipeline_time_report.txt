@@ -1,0 +1,19 @@
+\begin{table}[H]
+\centering
+\renewcommand{\tablename}{Bảng}
+\caption{Thời gian xử lý trung bình của các bước trong hệ thống}
+\label{tab:response_time}
+\begin{tabular}{|c|c|c|}
+\hline
+Thành phần xử lý & Thời gian (ms) & Tỷ trọng (\%) \\
+\hline
+Tiếp nhận yêu cầu và truyền tải dữ liệu & 15.39 & 13.11 \\
+Đưa vào hàng đợi và phân phối tác vụ & 10.39 & 8.85 \\
+Tiền xử lý ảnh & 6.37 & 5.43 \\
+Suy luận mô hình và sinh bản đồ đặc trưng & 72.87 & 62.07 \\
+Lưu trữ kết quả & 12.37 & 10.54 \\
+\hline
+Tổng thời gian phản hồi & 117.39 & 100 \\
+\hline
+\end{tabular}
+\end{table}
